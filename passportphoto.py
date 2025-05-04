@@ -58,6 +58,7 @@ border_mm = st.sidebar.slider("White Border (mm)", 0, 5, 2)
 
 uploaded_file = st.file_uploader("Upload your photo", type=["jpg", "jpeg", "png"])
 
+# Initial state reset on file upload
 if uploaded_file:
     original_image = Image.open(uploaded_file).convert("RGB")
     st.image(original_image, caption="Original Image", use_column_width=True)
@@ -70,6 +71,7 @@ if uploaded_file:
 
     selection = st.selectbox("Select Country or Custom Size", country_options)
 
+    # On country change, reset the cropping and resizing logic
     if selection == "Custom":
         width_mm = st.number_input("Custom Width (mm)", min_value=25, max_value=100, value=35)
         height_mm = st.number_input("Custom Height (mm)", min_value=25, max_value=100, value=45)
