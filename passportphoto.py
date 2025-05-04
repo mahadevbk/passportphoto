@@ -70,7 +70,7 @@ if uploaded_file:
         width_mm = st.number_input("Custom Width (mm)", min_value=25, max_value=100, value=35)
         height_mm = st.number_input("Custom Height (mm)", min_value=25, max_value=100, value=45)
     else:
-        selected_country = selection.split(" ("))[0]
+        selected_country = selection.split(" (")[0]
         width_mm, height_mm = passport_sizes[selected_country]
 
     photo_width_px = mm_to_pixels(width_mm, dpi)
