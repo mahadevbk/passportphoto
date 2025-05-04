@@ -54,7 +54,7 @@ st.title("📸 Passport Photo Generator with Auto Face Centering")
 # --- Sidebar Controls ---
 st.sidebar.header("⚙️ Settings")
 dpi = st.sidebar.slider("DPI (dots per inch)", 200, 600, 300)
-border_mm = st.sidebar.slider("White Border (mm)", 0, 100, 50)
+border_mm = st.sidebar.slider("White Border (mm)", 2, 5, 2)
 
 uploaded_file = st.file_uploader("Upload your photo", type=["jpg", "jpeg", "png"])
 
@@ -64,7 +64,7 @@ if uploaded_file:
 
     # Display countries with size in dropdown
     country_options = [
-    f"{country} ({w}x{h} mm)" for country, (w, h) in passport_sizes.items()
+        f"{country} ({w}x{h} mm)" for country, (w, h) in passport_sizes.items()
     ]
     country_options.append("Custom")
 
