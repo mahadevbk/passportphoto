@@ -122,6 +122,7 @@ if uploaded_file:
     else:
         final_image = passport_canvas
 
+    # --- Display the final image ---
     st.subheader("🖼️ Final Passport Photo Preview")
     st.image(final_image, caption="Centered and Bordered", width=300)
 
