@@ -85,30 +85,23 @@ if uploaded_file:
         st.warning("⚠️ Face not detected. Using original image.")
 
     img_width, img_height = cropped_image.size
-    scale = photo_height_px / img_height  # Fit to height always
+    scale = max(photo_width_px / img_width, photo_height_px / img_height)
     new_width = int(img_width * scale)
     new_height = int(img_height * scale)
 
     resized_image = cropped_image.resize((new_width, new_height), Image.LANCZOS)
 
-    if new_width > photo_width_px:
-        left = (new_width - photo_width_px) // 2
-        resized_image = resized_image.crop((left, 0, left + photo_width_px, new_height))
-    else:
-        temp_canvas = Image.new("RGB", (photo_width_px, photo_height_px), "white")
-        paste_x = (photo_width_px - new_width) // 2
-        temp_canvas.paste(resized_image, (paste_x, 0))
-        resized_image = temp_canvas
-
-    passport_canvas = resized_image
+    left = (new_width - photo_width_px) // 2
+    top = (new_height - photo_height_px) // 2
+    cropped_resized = resized_image.crop((left, top, left + photo_width_px, top + photo_height_px))
 
     if border_mm > 0:
-        final_width = passport_canvas.width + 2 * border_px
-        final_height = passport_canvas.height + 2 * border_px
+        final_width = cropped_resized.width + 2 * border_px
+        final_height = cropped_resized.height + 2 * border_px
         final_image = Image.new("RGB", (final_width, final_height), "white")
-        final_image.paste(passport_canvas, (border_px, border_px))
+        final_image.paste(cropped_resized, (border_px, border_px))
     else:
-        final_image = passport_canvas
+        final_image = cropped_resized
 
     st.subheader("🖼️ Final Passport Photo Preview")
     st.image(final_image, caption="Centered and Bordered", width=300)
@@ -138,37 +131,41 @@ if uploaded_file:
     elif download_option == "Polaroid Style":
         st.markdown("✏️ Optional: Add a caption below the photo.")
         caption_text = st.text_input("Caption (leave blank for no text):", "")
-
-        # Add a slider to control caption font size in mm
-        caption_font_mm = st.slider("Caption Font Size (mm)", min_value=2, max_value=45, value=24)
+        caption_font_mm = st.slider("Caption Font Size (mm)", min_value=2, max_value=15, value=12)
 
         top_border = side_border = border_px
-        bottom_border = int(border_px * 6)
+        bottom_border = int(border_px * 3)
 
         polaroid_width = final_image.width + 2 * side_border
         polaroid_height = final_image.height + top_border + bottom_border
         polaroid_img = Image.new("RGB", (polaroid_width, polaroid_height), "white")
-        polaroid_img.paste(final_image, (side_border, top_border))
 
-        # Add caption if provided
+        # Rounded image
+        radius = 20
+        mask = Image.new("L", final_image.size, 0)
+        draw = ImageDraw.Draw(mask)
+        draw.rounded_rectangle([(0, 0), final_image.size], radius=radius, fill=255)
+        rounded_image = final_image.copy()
+        rounded_image.putalpha(mask)
+
+        polaroid_img = polaroid_img.convert("RGBA")
+        polaroid_img.paste(rounded_image, (side_border, top_border), mask=rounded_image)
+
         if caption_text.strip():
             draw = ImageDraw.Draw(polaroid_img)
             try:
-                font = ImageFont.truetype("arial.ttf", size=mm_to_pixels(caption_font_mm, dpi=dpi))  # Updated font size
+                font = ImageFont.truetype("DejaVuSans.ttf", size=mm_to_pixels(caption_font_mm, dpi))
             except:
                 font = ImageFont.load_default()
 
             text_bbox = draw.textbbox((0, 0), caption_text, font=font)
             text_width = text_bbox[2] - text_bbox[0]
             text_height = text_bbox[3] - text_bbox[1]
-
-            # Center the text horizontally
             text_x = (polaroid_img.width - text_width) // 2
-
-            # Place the text below the image (centered)
             text_y = final_image.height + top_border + ((bottom_border - text_height) // 2)
             draw.text((text_x, text_y), caption_text, fill="black", font=font)
 
+        polaroid_img = polaroid_img.convert("RGB")
         st.subheader("🖼️ Polaroid-Style Preview")
         st.image(polaroid_img, caption="Polaroid Output", width=300)
 
