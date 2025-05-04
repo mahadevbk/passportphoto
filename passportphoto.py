@@ -129,7 +129,7 @@ if uploaded_file:
             mime="image/jpeg"
         )
 
-    elif download_option == "Polaroid Style":
+        elif download_option == "Polaroid Style":
         st.markdown("✏️ Optional: Add a caption below the photo.")
         caption_text = st.text_input("Caption (leave blank for no text):", "")
         caption_font_mm = st.slider("Caption Font Size (mm)", min_value=2, max_value=15, value=12)
@@ -139,31 +139,36 @@ if uploaded_file:
 
         polaroid_width = final_image.width + 2 * side_border
         polaroid_height = final_image.height + top_border + bottom_border
-        polaroid_img = Image.new("RGB", (polaroid_width, polaroid_height), "white")
+        polaroid_img = Image.new("RGBA", (polaroid_width, polaroid_height), "white")
 
+        # Prepare rounded mask
         mask = Image.new("L", final_image.size, 0)
-        draw = ImageDraw.Draw(mask)
-        draw.rounded_rectangle([(0, 0), final_image.size], radius=corner_radius, fill=255)
-        rounded_image = final_image.copy()
+        draw_mask = ImageDraw.Draw(mask)
+        draw_mask.rounded_rectangle([(0, 0), final_image.size], radius=corner_radius, fill=255)
+
+        rounded_image = final_image.convert("RGBA")
         rounded_image.putalpha(mask)
 
-        polaroid_img = polaroid_img.convert("RGBA")
+        # Paste rounded photo
         polaroid_img.paste(rounded_image, (side_border, top_border), mask=rounded_image)
 
+        # Add caption
         if caption_text.strip():
-            draw = ImageDraw.Draw(polaroid_img)
+            draw_text = ImageDraw.Draw(polaroid_img)
             try:
                 font = ImageFont.truetype("DejaVuSans.ttf", size=mm_to_pixels(caption_font_mm, dpi))
             except:
                 font = ImageFont.load_default()
 
-            text_bbox = draw.textbbox((0, 0), caption_text, font=font)
+            text_bbox = draw_text.textbbox((0, 0), caption_text, font=font)
             text_width = text_bbox[2] - text_bbox[0]
             text_height = text_bbox[3] - text_bbox[1]
             text_x = (polaroid_img.width - text_width) // 2
-            text_y = final_image.height + top_border + ((bottom_border - text_height) // 2) - mm_to_pixels(1, dpi)
-            draw.text((text_x, text_y), caption_text, fill="black", font=font)
+            # Position caption slightly higher (1.5 mm offset)
+            text_y = final_image.height + top_border + ((bottom_border - text_height) // 2) - mm_to_pixels(1.5, dpi)
+            draw_text.text((text_x, text_y), caption_text, fill="black", font=font)
 
+        # Convert back to RGB for saving and preview
         polaroid_img = polaroid_img.convert("RGB")
         st.subheader("🖼️ Polaroid-Style Preview")
         st.image(polaroid_img, caption="Polaroid Output", width=300)
@@ -176,6 +181,7 @@ if uploaded_file:
             file_name=f"{custom_filename}_polaroid.jpg",
             mime="image/jpeg"
         )
+
 
     else:
         img_buffer = io.BytesIO()
