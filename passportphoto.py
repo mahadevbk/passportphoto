@@ -54,7 +54,7 @@ st.title("📸 Passport Photo Generator with Auto Face Centering")
 # --- Sidebar Controls ---
 st.sidebar.header("⚙️ Settings")
 dpi = st.sidebar.slider("DPI (dots per inch)", 200, 600, 300)
-border_mm = st.sidebar.slider("White Border (mm)", 2, 5, 2)
+border_mm = st.sidebar.slider("White Border (mm)", 0, 5, 2)
 
 uploaded_file = st.file_uploader("Upload your photo", type=["jpg", "jpeg", "png"])
 
