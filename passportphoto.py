@@ -54,6 +54,7 @@ st.title("📸 Passport Photo Generator with Auto Face Centering")
 st.sidebar.header("⚙️ Settings")
 dpi = st.sidebar.slider("DPI (dots per inch)", 200, 600, 300)
 border_mm = st.sidebar.slider("White Border (mm)", 0, 5, 2)
+corner_radius = st.sidebar.slider("Polaroid Corner Radius (px)", 0, 100, 20)
 
 uploaded_file = st.file_uploader("Upload your photo", type=["jpg", "jpeg", "png"])
 
@@ -140,11 +141,9 @@ if uploaded_file:
         polaroid_height = final_image.height + top_border + bottom_border
         polaroid_img = Image.new("RGB", (polaroid_width, polaroid_height), "white")
 
-        # Rounded image
-        radius = 20
         mask = Image.new("L", final_image.size, 0)
         draw = ImageDraw.Draw(mask)
-        draw.rounded_rectangle([(0, 0), final_image.size], radius=radius, fill=255)
+        draw.rounded_rectangle([(0, 0), final_image.size], radius=corner_radius, fill=255)
         rounded_image = final_image.copy()
         rounded_image.putalpha(mask)
 
@@ -162,7 +161,7 @@ if uploaded_file:
             text_width = text_bbox[2] - text_bbox[0]
             text_height = text_bbox[3] - text_bbox[1]
             text_x = (polaroid_img.width - text_width) // 2
-            text_y = final_image.height + top_border + ((bottom_border - text_height) // 2)
+            text_y = final_image.height + top_border + ((bottom_border - text_height) // 2) - mm_to_pixels(1, dpi)
             draw.text((text_x, text_y), caption_text, fill="black", font=font)
 
         polaroid_img = polaroid_img.convert("RGB")
