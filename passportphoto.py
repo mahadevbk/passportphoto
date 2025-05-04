@@ -132,6 +132,30 @@ if uploaded_file:
 
     custom_filename = st.text_input("Enter the file name to download (without extension):", value="passport_photo")
 
+    # Download option: single photo or 3x3 grid
+    download_option = st.radio("Select Download Option", ["1 Photo", "6 Photos (3x3 grid)"])
+
+    if download_option == "6 Photos (3x3 grid)":
+        # Create a 3x3 grid (6 photos)
+        grid_width = final_image.width * 3
+        grid_height = final_image.height * 3
+        grid_image = Image.new("RGB", (grid_width, grid_height), "white")
+
+        for i in range(3):
+            for j in range(3):
+                # Place the image in a 3x3 grid
+                grid_image.paste(final_image, (i * final_image.width, j * final_image.height))
+
+        img_buffer = io.BytesIO()
+        grid_image.save(img_buffer, format="JPEG")
+        st.download_button(
+            label="📥 Download 6 Photos",
+            data=img_buffer.getvalue(),
+            file_name=f"{custom_filename}_6_photos.jpg",
+            mime="image/jpeg"
+        )
+
+    # Download option: single photo
     if st.button("Download Photo"):
         img_buffer = io.BytesIO()
         final_image.save(img_buffer, format="JPEG")
