@@ -161,7 +161,7 @@ if uploaded_file:
             text_width = text_bbox[2] - text_bbox[0]
             text_height = text_bbox[3] - text_bbox[1]
             text_x = (transparent_bg.width - text_width) // 2
-            text_y = final_image.height + top_border + ((bottom_border - text_height) // 2) - mm_to_pixels(6, dpi)
+            text_y = final_image.height + top_border + (bottom_border - text_height) // 2
             draw_text.text((text_x, text_y), caption_text, fill="black", font=font)
 
         polaroid_img = Image.new("RGB", (polaroid_width, polaroid_height), "white")
