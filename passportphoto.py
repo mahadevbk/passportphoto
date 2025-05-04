@@ -139,6 +139,9 @@ if uploaded_file:
         st.markdown("✏️ Optional: Add a caption below the photo.")
         caption_text = st.text_input("Caption (leave blank for no text):", "")
 
+        # Add a slider to control caption font size in mm
+        caption_font_mm = st.slider("Caption Font Size (mm)", min_value=2, max_value=15, value=12)
+
         top_border = side_border = border_px
         bottom_border = int(border_px * 3)
 
@@ -147,17 +150,22 @@ if uploaded_file:
         polaroid_img = Image.new("RGB", (polaroid_width, polaroid_height), "white")
         polaroid_img.paste(final_image, (side_border, top_border))
 
+        # Add caption if provided
         if caption_text.strip():
             draw = ImageDraw.Draw(polaroid_img)
             try:
-                font = ImageFont.truetype("arial.ttf", size=mm_to_pixels(3, dpi=300))
+                font = ImageFont.truetype("arial.ttf", size=mm_to_pixels(caption_font_mm, dpi=dpi))  # Updated font size
             except:
                 font = ImageFont.load_default()
 
             text_bbox = draw.textbbox((0, 0), caption_text, font=font)
             text_width = text_bbox[2] - text_bbox[0]
             text_height = text_bbox[3] - text_bbox[1]
+
+            # Center the text horizontally
             text_x = (polaroid_img.width - text_width) // 2
+
+            # Place the text below the image (centered)
             text_y = final_image.height + top_border + ((bottom_border - text_height) // 2)
             draw.text((text_x, text_y), caption_text, fill="black", font=font)
 
