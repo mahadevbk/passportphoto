@@ -1,5 +1,5 @@
 import streamlit as st
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 import cv2
 import numpy as np
 import io
@@ -51,36 +51,27 @@ def detect_and_crop_face(pil_image):
 st.set_page_config(page_title="Passport Photo Generator", layout="centered")
 st.title("📸 Passport Photo Generator with Auto Face Centering")
 
-# --- Sidebar Controls ---
 st.sidebar.header("⚙️ Settings")
 dpi = st.sidebar.slider("DPI (dots per inch)", 200, 600, 300)
 border_mm = st.sidebar.slider("White Border (mm)", 0, 5, 2)
 
 uploaded_file = st.file_uploader("Upload your photo", type=["jpg", "jpeg", "png"])
 
-# Initial state reset on file upload
 if uploaded_file:
     original_image = Image.open(uploaded_file).convert("RGB")
     st.image(original_image, caption="Original Image", use_column_width=True)
 
-    # Display countries with size in dropdown
-    country_options = [
-        f"{country} ({w}x{h} mm)" for country, (w, h) in passport_sizes.items()
-    ]
+    country_options = [f"{country} ({w}x{h} mm)" for country, (w, h) in passport_sizes.items()]
     country_options.append("Custom")
-
     selection = st.selectbox("Select Country or Custom Size", country_options)
 
-    # On country change, reset the cropping and resizing logic
     if selection == "Custom":
         width_mm = st.number_input("Custom Width (mm)", min_value=25, max_value=100, value=35)
         height_mm = st.number_input("Custom Height (mm)", min_value=25, max_value=100, value=45)
     else:
-        # Extract the country name from the dropdown selection
-        selected_country = selection.split(" (")[0]  # This removes the size part
+        selected_country = selection.split(" (")[0]
         width_mm, height_mm = passport_sizes[selected_country]
 
-    # Convert dimensions
     photo_width_px = mm_to_pixels(width_mm, dpi)
     photo_height_px = mm_to_pixels(height_mm, dpi)
     border_px = mm_to_pixels(border_mm, dpi)
@@ -93,22 +84,15 @@ if uploaded_file:
     else:
         st.warning("⚠️ Face not detected. Using original image.")
 
-    # --- Determine which dimension (width or height) is larger and resize accordingly ---
     img_width, img_height = cropped_image.size
-
-    # Resize based on the larger dimension (width or height)
     if photo_height_px > photo_width_px:
-        # Fit image to the height first, and adjust width according to aspect ratio
         new_height = photo_height_px
         new_width = int(new_height * (img_width / img_height))
     else:
-        # Fit image to the width first, and adjust height according to aspect ratio
         new_width = photo_width_px
         new_height = int(new_width * (img_height / img_width))
 
     resized_image = cropped_image.resize((new_width, new_height), Image.LANCZOS)
-
-    # --- Create passport-sized canvas for image (without border) ---
     passport_canvas = Image.new("RGB", (photo_width_px, photo_height_px), "white")
     paste_position = (
         (photo_width_px - new_width) // 2,
@@ -116,51 +100,80 @@ if uploaded_file:
     )
     passport_canvas.paste(resized_image, paste_position)
 
-    # --- Add white border around image only if border > 0 ---
     if border_mm > 0:
         final_width = passport_canvas.width + 2 * border_px
         final_height = passport_canvas.height + 2 * border_px
-
         final_image = Image.new("RGB", (final_width, final_height), "white")
         final_image.paste(passport_canvas, (border_px, border_px))
     else:
         final_image = passport_canvas
 
-    # --- Display the final image ---
     st.subheader("🖼️ Final Passport Photo Preview")
     st.image(final_image, caption="Centered and Bordered", width=300)
 
     custom_filename = st.text_input("Enter the file name to download (without extension):", value="passport_photo")
 
-    # Download option: single photo or 3x2 grid
-    download_option = st.radio("Select Download Option", ["1 Photo", "6 Photos (3x2 grid)"])
+    download_option = st.radio("Select Download Option", ["1 Photo", "6 Photos (3x2 grid)", "Polaroid Style"])
 
     if download_option == "6 Photos (3x2 grid)":
-        # Create a 3x2 grid (6 photos)
         grid_width = final_image.width * 3
-        grid_height = final_image.height * 2  # 2 rows of 3 photos
+        grid_height = final_image.height * 2
         grid_image = Image.new("RGB", (grid_width, grid_height), "white")
 
         for i in range(3):
             for j in range(2):
-                # Place the image in a 3x2 grid (6 photos)
                 grid_image.paste(final_image, (i * final_image.width, j * final_image.height))
 
         img_buffer = io.BytesIO()
         grid_image.save(img_buffer, format="JPEG")
         st.download_button(
-            label="📥 Download 6 Photos",
+            label="📅 Download 6 Photos",
             data=img_buffer.getvalue(),
             file_name=f"{custom_filename}_6_photos.jpg",
             mime="image/jpeg"
         )
 
-    # Download option: single photo
-    if st.button("Download Photo"):
+    elif download_option == "Polaroid Style":
+        st.markdown("✏️ Optional: Add a caption below the photo.")
+        caption_text = st.text_input("Caption (leave blank for no text):", "")
+
+        top_border = side_border = border_px
+        bottom_border = int(border_px * 3)
+
+        polaroid_width = final_image.width + 2 * side_border
+        polaroid_height = final_image.height + top_border + bottom_border
+        polaroid_img = Image.new("RGB", (polaroid_width, polaroid_height), "white")
+        polaroid_img.paste(final_image, (side_border, top_border))
+
+        if caption_text.strip():
+            draw = ImageDraw.Draw(polaroid_img)
+            try:
+                font = ImageFont.truetype("arial.ttf", size=mm_to_pixels(3, dpi=300))
+            except:
+                font = ImageFont.load_default()
+
+            text_width, text_height = draw.textsize(caption_text, font=font)
+            text_x = (polaroid_img.width - text_width) // 2
+            text_y = final_image.height + top_border + ((bottom_border - text_height) // 2)
+            draw.text((text_x, text_y), caption_text, fill="black", font=font)
+
+        st.subheader("🖼️ Polaroid-Style Preview")
+        st.image(polaroid_img, caption="Polaroid Output", width=300)
+
+        img_buffer = io.BytesIO()
+        polaroid_img.save(img_buffer, format="JPEG")
+        st.download_button(
+            label="📅 Download Polaroid Image",
+            data=img_buffer.getvalue(),
+            file_name=f"{custom_filename}_polaroid.jpg",
+            mime="image/jpeg"
+        )
+
+    else:
         img_buffer = io.BytesIO()
         final_image.save(img_buffer, format="JPEG")
         st.download_button(
-            label="📥 Click to Download",
+            label="📅 Click to Download",
             data=img_buffer.getvalue(),
             file_name=f"{custom_filename}.jpg",
             mime="image/jpeg"
