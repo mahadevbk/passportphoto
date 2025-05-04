@@ -64,7 +64,7 @@ if uploaded_file:
 
     # Display countries with size in dropdown
     country_options = [
-        f"{country} ({w}x{h} mm)" for country, (w, h) in passport_sizes.items()
+    f"{country} ({w}x{h} mm)" for country, (w, h) in passport_sizes.items()
     ]
     country_options.append("Custom")
 
@@ -74,7 +74,8 @@ if uploaded_file:
         width_mm = st.number_input("Custom Width (mm)", min_value=25, max_value=100, value=35)
         height_mm = st.number_input("Custom Height (mm)", min_value=25, max_value=100, value=45)
     else:
-        selected_country = selection.split(" (")[0]
+        # Extract the country name from the dropdown selection
+        selected_country = selection.split(" (")[0]  # This removes the size part
         width_mm, height_mm = passport_sizes[selected_country]
 
     # Convert dimensions
