@@ -139,19 +139,19 @@ if uploaded_file:
 
         polaroid_width = final_image.width + 2 * side_border
         polaroid_height = final_image.height + top_border + bottom_border
-        polaroid_img = Image.new("RGBA", (polaroid_width, polaroid_height), "white")
 
-        # Apply rounded corners using alpha mask
+        transparent_bg = Image.new("RGBA", (polaroid_width, polaroid_height), (255, 255, 255, 0))
+
         rounded_image = final_image.convert("RGBA")
         rounded_mask = Image.new("L", rounded_image.size, 0)
         draw = ImageDraw.Draw(rounded_mask)
         draw.rounded_rectangle([(0, 0), rounded_image.size], radius=corner_radius, fill=255)
         rounded_image.putalpha(rounded_mask)
-        polaroid_img.paste(rounded_image, (side_border, top_border), mask=rounded_mask)
 
-        # Add caption
+        transparent_bg.paste(rounded_image, (side_border, top_border), mask=rounded_image)
+
         if caption_text.strip():
-            draw_text = ImageDraw.Draw(polaroid_img)
+            draw_text = ImageDraw.Draw(transparent_bg)
             try:
                 font = ImageFont.truetype("DejaVuSans.ttf", size=mm_to_pixels(caption_font_mm, dpi))
             except:
@@ -160,11 +160,13 @@ if uploaded_file:
             text_bbox = draw_text.textbbox((0, 0), caption_text, font=font)
             text_width = text_bbox[2] - text_bbox[0]
             text_height = text_bbox[3] - text_bbox[1]
-            text_x = (polaroid_img.width - text_width) // 2
-            text_y = final_image.height + top_border + ((bottom_border - text_height) // 2) - mm_to_pixels(1.5, dpi)
+            text_x = (transparent_bg.width - text_width) // 2
+            text_y = final_image.height + top_border + ((bottom_border - text_height) // 2) - mm_to_pixels(3, dpi)
             draw_text.text((text_x, text_y), caption_text, fill="black", font=font)
 
-        polaroid_img = polaroid_img.convert("RGB")
+        polaroid_img = Image.new("RGB", (polaroid_width, polaroid_height), "white")
+        polaroid_img.paste(transparent_bg, (0, 0), transparent_bg.split()[3])
+
         st.subheader("🖼️ Polaroid-Style Preview")
         st.image(polaroid_img, caption="Polaroid Output", width=300)
 
