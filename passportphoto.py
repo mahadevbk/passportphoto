@@ -140,10 +140,10 @@ if uploaded_file:
         caption_text = st.text_input("Caption (leave blank for no text):", "")
 
         # Add a slider to control caption font size in mm
-        caption_font_mm = st.slider("Caption Font Size (mm)", min_value=2, max_value=15, value=12)
+        caption_font_mm = st.slider("Caption Font Size (mm)", min_value=2, max_value=45, value=24)
 
         top_border = side_border = border_px
-        bottom_border = int(border_px * 3)
+        bottom_border = int(border_px * 6)
 
         polaroid_width = final_image.width + 2 * side_border
         polaroid_height = final_image.height + top_border + bottom_border
