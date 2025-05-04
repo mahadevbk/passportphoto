@@ -123,7 +123,7 @@ if uploaded_file:
         img_buffer = io.BytesIO()
         grid_image.save(img_buffer, format="JPEG")
         st.download_button(
-            label="📅 Download 6 Photos",
+            label="🗕️ Download 6 Photos",
             data=img_buffer.getvalue(),
             file_name=f"{custom_filename}_6_photos.jpg",
             mime="image/jpeg"
@@ -141,15 +141,13 @@ if uploaded_file:
         polaroid_height = final_image.height + top_border + bottom_border
         polaroid_img = Image.new("RGBA", (polaroid_width, polaroid_height), "white")
 
-        # Prepare rounded mask
-        mask = Image.new("L", final_image.size, 0)
-        draw_mask = ImageDraw.Draw(mask)
-        draw_mask.rounded_rectangle([(0, 0), final_image.size], radius=corner_radius, fill=255)
-
+        # Apply rounded corners using alpha mask
         rounded_image = final_image.convert("RGBA")
-        rounded_image.putalpha(mask)
-
-        polaroid_img.paste(rounded_image, (side_border, top_border), mask=rounded_image)
+        rounded_mask = Image.new("L", rounded_image.size, 0)
+        draw = ImageDraw.Draw(rounded_mask)
+        draw.rounded_rectangle([(0, 0), rounded_image.size], radius=corner_radius, fill=255)
+        rounded_image.putalpha(rounded_mask)
+        polaroid_img.paste(rounded_image, (side_border, top_border), mask=rounded_mask)
 
         # Add caption
         if caption_text.strip():
@@ -173,7 +171,7 @@ if uploaded_file:
         img_buffer = io.BytesIO()
         polaroid_img.save(img_buffer, format="JPEG")
         st.download_button(
-            label="📅 Download Polaroid Image",
+            label="🗕️ Download Polaroid Image",
             data=img_buffer.getvalue(),
             file_name=f"{custom_filename}_polaroid.jpg",
             mime="image/jpeg"
@@ -183,7 +181,7 @@ if uploaded_file:
         img_buffer = io.BytesIO()
         final_image.save(img_buffer, format="JPEG")
         st.download_button(
-            label="📅 Click to Download",
+            label="🗕️ Click to Download",
             data=img_buffer.getvalue(),
             file_name=f"{custom_filename}.jpg",
             mime="image/jpeg"
