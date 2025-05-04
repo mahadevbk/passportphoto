@@ -103,4 +103,41 @@ if uploaded_file:
         new_width = int(new_height * (img_width / img_height))
     else:
         # Fit image to the width first, and adjust height according to aspect ratio
-        new
+        new_width = photo_width_px
+        new_height = int(new_width * (img_height / img_width))
+
+    resized_image = cropped_image.resize((new_width, new_height), Image.LANCZOS)
+
+    # --- Create passport-sized canvas for image (without border) ---
+    passport_canvas = Image.new("RGB", (photo_width_px, photo_height_px), "white")
+    paste_position = (
+        (photo_width_px - new_width) // 2,
+        (photo_height_px - new_height) // 2
+    )
+    passport_canvas.paste(resized_image, paste_position)
+
+    # --- Add white border around image only if border > 0 ---
+    if border_mm > 0:
+        final_width = passport_canvas.width + 2 * border_px
+        final_height = passport_canvas.height + 2 * border_px
+
+        final_image = Image.new("RGB", (final_width, final_height), "white")
+        final_image.paste(passport_canvas, (border_px, border_px))
+    else:
+        final_image = passport_canvas
+
+    # --- Display the final image ---
+    st.subheader("🖼️ Final Passport Photo Preview")
+    st.image(final_image, caption="Centered and Bordered", width=300)
+
+    custom_filename = st.text_input("Enter the file name to download (without extension):", value="passport_photo")
+
+    if st.button("Download Photo"):
+        img_buffer = io.BytesIO()
+        final_image.save(img_buffer, format="JPEG")
+        st.download_button(
+            label="📥 Click to Download",
+            data=img_buffer.getvalue(),
+            file_name=f"{custom_filename}.jpg",
+            mime="image/jpeg"
+        )
