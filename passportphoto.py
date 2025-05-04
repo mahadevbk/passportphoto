@@ -148,7 +148,7 @@ if uploaded_file:
         draw.rounded_rectangle([(0, 0), rounded_image.size], radius=corner_radius, fill=255)
         rounded_image.putalpha(rounded_mask)
 
-        transparent_bg.paste(rounded_image, (side_border, top_border), mask=rounded_image)
+        transparent_bg.paste(rounded_image, (side_border, top_border), mask=rounded_mask)
 
         if caption_text.strip():
             draw_text = ImageDraw.Draw(transparent_bg)
@@ -165,7 +165,8 @@ if uploaded_file:
             draw_text.text((text_x, text_y), caption_text, fill="black", font=font)
 
         polaroid_img = Image.new("RGB", (polaroid_width, polaroid_height), "white")
-        polaroid_img.paste(transparent_bg, (0, 0), transparent_bg.split()[3])
+        alpha_mask = transparent_bg.getchannel("A")
+        polaroid_img.paste(transparent_bg.convert("RGB"), (0, 0), mask=alpha_mask)
 
         st.subheader("🖼️ Polaroid-Style Preview")
         st.image(polaroid_img, caption="Polaroid Output", width=300)
