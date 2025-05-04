@@ -93,49 +93,14 @@ if uploaded_file:
     else:
         st.warning("⚠️ Face not detected. Using original image.")
 
-    # Resize with aspect ratio preserved
-    img_ratio = cropped_image.width / cropped_image.height
-    target_ratio = photo_width_px / photo_height_px
+    # --- Determine which dimension (width or height) is larger and resize accordingly ---
+    img_width, img_height = cropped_image.size
 
-    if img_ratio > target_ratio:
-        new_width = photo_width_px
-        new_height = int(photo_width_px / img_ratio)
-    else:
+    # Resize based on the larger dimension (width or height)
+    if photo_height_px > photo_width_px:
+        # Fit image to the height first, and adjust width according to aspect ratio
         new_height = photo_height_px
-        new_width = int(photo_height_px * img_ratio)
-
-    resized_image = cropped_image.resize((new_width, new_height), Image.LANCZOS)
-
-    # --- Create passport-sized canvas for image (without border) ---
-    passport_canvas = Image.new("RGB", (photo_width_px, photo_height_px), "white")
-    paste_position = (
-        (photo_width_px - new_width) // 2,
-        (photo_height_px - new_height) // 2
-    )
-    passport_canvas.paste(resized_image, paste_position)
-
-    # --- Add white border around image only if border > 0 ---
-    if border_mm > 0:
-        final_width = passport_canvas.width + 2 * border_px
-        final_height = passport_canvas.height + 2 * border_px
-
-        final_image = Image.new("RGB", (final_width, final_height), "white")
-        final_image.paste(passport_canvas, (border_px, border_px))
+        new_width = int(new_height * (img_width / img_height))
     else:
-        final_image = passport_canvas
-
-    # --- Display the final image ---
-    st.subheader("🖼️ Final Passport Photo Preview")
-    st.image(final_image, caption="Centered and Bordered", width=300)
-
-    custom_filename = st.text_input("Enter the file name to download (without extension):", value="passport_photo")
-
-    if st.button("Download Photo"):
-        img_buffer = io.BytesIO()
-        final_image.save(img_buffer, format="JPEG")
-        st.download_button(
-            label="📥 Click to Download",
-            data=img_buffer.getvalue(),
-            file_name=f"{custom_filename}.jpg",
-            mime="image/jpeg"
-        )
+        # Fit image to the width first, and adjust height according to aspect ratio
+        new
