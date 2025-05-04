@@ -154,7 +154,9 @@ if uploaded_file:
             except:
                 font = ImageFont.load_default()
 
-            text_width, text_height = draw.textsize(caption_text, font=font)
+            text_bbox = draw.textbbox((0, 0), caption_text, font=font)
+            text_width = text_bbox[2] - text_bbox[0]
+            text_height = text_bbox[3] - text_bbox[1]
             text_x = (polaroid_img.width - text_width) // 2
             text_y = final_image.height + top_border + ((bottom_border - text_height) // 2)
             draw.text((text_x, text_y), caption_text, fill="black", font=font)
