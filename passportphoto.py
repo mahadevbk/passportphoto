@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 import io
 
-# Country-specific photo dimensions in mm (width, height)
+# --- Passport sizes in mm (width, height) ---
 passport_sizes = {
     "United States": (51, 51),
     "United Kingdom": (35, 45),
@@ -19,29 +19,26 @@ passport_sizes = {
     "Other": (35, 45)
 }
 
-# Convert mm to pixels based on DPI
+# --- MM to pixels conversion ---
 def mm_to_pixels(mm, dpi=300):
     return int((mm / 25.4) * dpi)
 
-# Detect face using OpenCV Haar cascades
+# --- Detect and crop around face ---
 def detect_and_crop_face(pil_image):
     cv_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
     gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
 
-    # Load OpenCV's pre-trained Haar cascade face detector
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
     faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
 
     if len(faces) == 0:
         return pil_image, False
 
-    # Choose the largest face (most likely the main subject)
     x, y, w, h = max(faces, key=lambda rect: rect[2] * rect[3])
-
-    # Add padding around the face
-    padding = 2.0  # 200% area
+    padding = 2.0
     cx, cy = x + w // 2, y + h // 2
     half_side = int(max(w, h) * padding / 2)
+
     left = max(cx - half_side, 0)
     top = max(cy - half_side, 0)
     right = min(cx + half_side, cv_image.shape[1])
@@ -50,10 +47,11 @@ def detect_and_crop_face(pil_image):
     face_crop = pil_image.crop((left, top, right, bottom))
     return face_crop, True
 
+# --- Streamlit UI ---
 st.set_page_config(page_title="Passport Photo Generator", layout="centered")
 st.title("📸 Passport Photo Generator with Auto Face Centering")
 
-# Sidebar settings
+# --- Sidebar Controls ---
 st.sidebar.header("⚙️ Settings")
 dpi = st.sidebar.slider("DPI (dots per inch)", 200, 600, 300)
 border_mm = st.sidebar.slider("White Border (mm)", 0, 100, 50)
@@ -72,16 +70,15 @@ if uploaded_file:
     photo_height_px = mm_to_pixels(height_mm, dpi)
     border_px = mm_to_pixels(border_mm, dpi)
 
-    # --- FACE DETECTION ---
     st.info("🔍 Detecting and centering face...")
     cropped_image, found = detect_and_crop_face(original_image)
 
     if found:
-        st.success("✅ Face detected and cropped.")
+        st.success("✅ Face detected and centered.")
     else:
-        st.warning("⚠️ Face not detected — using original image.")
+        st.warning("⚠️ Face not detected. Using original image.")
 
-    # Resize with maintained aspect ratio
+    # Resize with aspect ratio
     img_ratio = cropped_image.width / cropped_image.height
     target_ratio = photo_width_px / photo_height_px
 
@@ -94,7 +91,7 @@ if uploaded_file:
 
     resized_image = cropped_image.resize((new_width, new_height), Image.LANCZOS)
 
-    # Create photo canvas
+    # Create white canvas for passport size
     passport_canvas = Image.new("RGB", (photo_width_px, photo_height_px), "white")
     paste_position = (
         (photo_width_px - new_width) // 2,
@@ -102,11 +99,23 @@ if uploaded_file:
     )
     passport_canvas.paste(resized_image, paste_position)
 
-    # Add border
+    # Add white border
     final_width = photo_width_px + 2 * border_px
     final_height = photo_height_px + 2 * border_px
     final_image = Image.new("RGB", (final_width, final_height), "white")
     final_image.paste(passport_canvas, (border_px, border_px))
 
     st.subheader("🖼️ Final Passport Photo Preview")
-    st.image(final_image, caption="Centered and Bordered", width_
+    st.image(final_image, caption="Centered and Bordered", width=300)
+
+    custom_filename = st.text_input("Enter the file name to download (without extension):", value="passport_photo")
+
+    if st.button("Download Photo"):
+        img_buffer = io.BytesIO()
+        final_image.save(img_buffer, format="JPEG")
+        st.download_button(
+            label="📥 Click to Download",
+            data=img_buffer.getvalue(),
+            file_name=f"{custom_filename}.jpg",
+            mime="image/jpeg"
+        )
