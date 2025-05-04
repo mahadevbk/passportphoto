@@ -112,12 +112,15 @@ if uploaded_file:
     )
     passport_canvas.paste(resized_image, paste_position)
 
-    # --- Add white border around image ---
-    final_width = passport_canvas.width + 2 * border_px
-    final_height = passport_canvas.height + 2 * border_px
+    # --- Add white border around image only if border > 0 ---
+    if border_mm > 0:
+        final_width = passport_canvas.width + 2 * border_px
+        final_height = passport_canvas.height + 2 * border_px
 
-    final_image = Image.new("RGB", (final_width, final_height), "white")
-    final_image.paste(passport_canvas, (border_px, border_px))
+        final_image = Image.new("RGB", (final_width, final_height), "white")
+        final_image.paste(passport_canvas, (border_px, border_px))
+    else:
+        final_image = passport_canvas
 
     st.subheader("🖼️ Final Passport Photo Preview")
     st.image(final_image, caption="Centered and Bordered", width=300)
