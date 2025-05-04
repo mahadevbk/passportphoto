@@ -104,7 +104,8 @@ if uploaded_file:
 
     resized_image = cropped_image.resize((new_width, new_height), Image.LANCZOS)
 
-    # Create white canvas for passport size
+    # --- Create final image with white border ---
+    # Create the passport-sized canvas for image (without border)
     passport_canvas = Image.new("RGB", (photo_width_px, photo_height_px), "white")
     paste_position = (
         (photo_width_px - new_width) // 2,
@@ -112,9 +113,10 @@ if uploaded_file:
     )
     passport_canvas.paste(resized_image, paste_position)
 
-    # Add white border
-    final_width = photo_width_px + 2 * border_px
-    final_height = photo_height_px + 2 * border_px
+    # Add the white border around the image (both top and bottom should be equal)
+    final_width = passport_canvas.width + 2 * border_px
+    final_height = passport_canvas.height + 2 * border_px
+
     final_image = Image.new("RGB", (final_width, final_height), "white")
     final_image.paste(passport_canvas, (border_px, border_px))
 
