@@ -70,7 +70,7 @@ if uploaded_file:
         width_mm = st.number_input("Custom Width (mm)", min_value=25, max_value=100, value=35)
         height_mm = st.number_input("Custom Height (mm)", min_value=25, max_value=100, value=45)
     else:
-        selected_country = selection.split(" (")[0]
+        selected_country = selection.split(" ("))[0]
         width_mm, height_mm = passport_sizes[selected_country]
 
     photo_width_px = mm_to_pixels(width_mm, dpi)
@@ -129,7 +129,7 @@ if uploaded_file:
             mime="image/jpeg"
         )
 
-        elif download_option == "Polaroid Style":
+    elif download_option == "Polaroid Style":
         st.markdown("✏️ Optional: Add a caption below the photo.")
         caption_text = st.text_input("Caption (leave blank for no text):", "")
         caption_font_mm = st.slider("Caption Font Size (mm)", min_value=2, max_value=15, value=12)
@@ -149,7 +149,6 @@ if uploaded_file:
         rounded_image = final_image.convert("RGBA")
         rounded_image.putalpha(mask)
 
-        # Paste rounded photo
         polaroid_img.paste(rounded_image, (side_border, top_border), mask=rounded_image)
 
         # Add caption
@@ -164,11 +163,9 @@ if uploaded_file:
             text_width = text_bbox[2] - text_bbox[0]
             text_height = text_bbox[3] - text_bbox[1]
             text_x = (polaroid_img.width - text_width) // 2
-            # Position caption slightly higher (1.5 mm offset)
             text_y = final_image.height + top_border + ((bottom_border - text_height) // 2) - mm_to_pixels(1.5, dpi)
             draw_text.text((text_x, text_y), caption_text, fill="black", font=font)
 
-        # Convert back to RGB for saving and preview
         polaroid_img = polaroid_img.convert("RGB")
         st.subheader("🖼️ Polaroid-Style Preview")
         st.image(polaroid_img, caption="Polaroid Output", width=300)
@@ -181,7 +178,6 @@ if uploaded_file:
             file_name=f"{custom_filename}_polaroid.jpg",
             mime="image/jpeg"
         )
-
 
     else:
         img_buffer = io.BytesIO()
