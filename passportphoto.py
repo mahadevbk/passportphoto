@@ -62,8 +62,20 @@ if uploaded_file:
     original_image = Image.open(uploaded_file).convert("RGB")
     st.image(original_image, caption="Original Image", use_column_width=True)
 
-    country = st.selectbox("Select Country", list(passport_sizes.keys()))
-    width_mm, height_mm = passport_sizes[country]
+    # Display countries with size in dropdown
+    country_options = [
+        f"{country} ({w}x{h} mm)" for country, (w, h) in passport_sizes.items()
+    ]
+    country_options.append("Custom")
+
+    selection = st.selectbox("Select Country or Custom Size", country_options)
+
+    if selection == "Custom":
+        width_mm = st.number_input("Custom Width (mm)", min_value=25, max_value=100, value=35)
+        height_mm = st.number_input("Custom Height (mm)", min_value=25, max_value=100, value=45)
+    else:
+        selected_country = selection.split(" (")[0]
+        width_mm, height_mm = passport_sizes[selected_country]
 
     # Convert dimensions
     photo_width_px = mm_to_pixels(width_mm, dpi)
@@ -78,7 +90,7 @@ if uploaded_file:
     else:
         st.warning("⚠️ Face not detected. Using original image.")
 
-    # Resize with aspect ratio
+    # Resize with aspect ratio preserved
     img_ratio = cropped_image.width / cropped_image.height
     target_ratio = photo_width_px / photo_height_px
 
