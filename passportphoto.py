@@ -85,12 +85,13 @@ if uploaded_file:
         st.warning("⚠️ Face not detected. Using original image.")
 
     img_width, img_height = cropped_image.size
-    if photo_height_px > photo_width_px:
-        new_height = photo_height_px
-        new_width = int(new_height * (img_width / img_height))
+    if (photo_height_px / img_height) < (photo_width_px / img_width):
+        scale = photo_height_px / img_height
     else:
-        new_width = photo_width_px
-        new_height = int(new_width * (img_height / img_width))
+        scale = photo_width_px / img_width
+
+    new_width = int(img_width * scale)
+    new_height = int(img_height * scale)
 
     resized_image = cropped_image.resize((new_width, new_height), Image.LANCZOS)
     passport_canvas = Image.new("RGB", (photo_width_px, photo_height_px), "white")
