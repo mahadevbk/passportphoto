@@ -1,5 +1,5 @@
 import streamlit as st
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import cv2
 import numpy as np
 import io
@@ -147,7 +147,6 @@ if uploaded_file:
 
         transparent_bg = Image.new("RGBA", (polaroid_width, polaroid_height), (255, 255, 255, 0))
 
-        # Create rounded image with anti-aliased mask
         rounded_image = final_image.convert("RGBA")
         scale_factor = 4
         large_size = (rounded_image.width * scale_factor, rounded_image.height * scale_factor)
@@ -177,11 +176,17 @@ if uploaded_file:
             text_y = final_image.height + top_border + ((bottom_border - text_height) // 2)
             draw_text.text((text_x, text_y), caption_text, fill="black", font=font)
 
-        polaroid_img = Image.new("RGB", (polaroid_width, polaroid_height), "white")
-        alpha_mask = transparent_bg.getchannel("A")
-        polaroid_img.paste(transparent_bg.convert("RGB"), (0, 0), mask=alpha_mask)
+        shadow_offset = 10
+        shadow = Image.new("RGBA", (polaroid_width + shadow_offset, polaroid_height + shadow_offset), (0, 0, 0, 0))
+        shadow_layer = Image.new("RGBA", (polaroid_width, polaroid_height), (0, 0, 0, 150))
+        shadow.paste(shadow_layer, (shadow_offset, shadow_offset), mask=rounded_mask)
+        shadow = shadow.filter(ImageFilter.GaussianBlur(radius=8))
+        shadow.paste(transparent_bg, (0, 0), mask=transparent_bg)
 
-        st.subheader("🖼️ Polaroid-Style Preview")
+        polaroid_img = Image.new("RGB", shadow.size, "white")
+        polaroid_img.paste(shadow.convert("RGB"), (0, 0))
+
+        st.subheader("🖼️ Polaroid-Style Preview with Shadow")
         st.image(polaroid_img, caption="Polaroid Output", width=300)
 
         img_buffer = io.BytesIO()
