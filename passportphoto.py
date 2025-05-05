@@ -158,7 +158,8 @@ if uploaded_file:
         if caption_text.strip():
             draw_text = ImageDraw.Draw(transparent_bg)
             try:
-                font = ImageFont.truetype("DejaVuSans.ttf", size=mm_to_pixels(caption_font_mm, dpi))
+                font = ImageFont.truetype("font = ImageFont.truetype("YourFestiveFont.ttf", size=mm_to_pixels(caption_font_mm, dpi))
+", size=mm_to_pixels(caption_font_mm, dpi))
             except:
                 font = ImageFont.load_default()
 
