@@ -177,9 +177,17 @@ if uploaded_file:
             draw_text.text((text_x, text_y), caption_text, fill="black", font=font)
 
         shadow_offset = 10
+        shadow_mask = Image.new("L", (polaroid_width, polaroid_height), 0)
+        shadow_draw = ImageDraw.Draw(shadow_mask)
+        shadow_draw.rounded_rectangle(
+            [(0, 0), (polaroid_width, polaroid_height)],
+            radius=corner_radius,
+            fill=255
+        )
+
         shadow = Image.new("RGBA", (polaroid_width + shadow_offset, polaroid_height + shadow_offset), (0, 0, 0, 0))
         shadow_layer = Image.new("RGBA", (polaroid_width, polaroid_height), (0, 0, 0, 150))
-        shadow.paste(shadow_layer, (shadow_offset, shadow_offset), mask=rounded_mask)
+        shadow.paste(shadow_layer, (shadow_offset, shadow_offset), mask=shadow_mask)
         shadow = shadow.filter(ImageFilter.GaussianBlur(radius=8))
         shadow.paste(transparent_bg, (0, 0), mask=transparent_bg)
 
