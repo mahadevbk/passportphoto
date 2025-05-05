@@ -140,29 +140,26 @@ if uploaded_file:
         caption_font_mm = st.slider("Caption Font Size (mm)", min_value=2, max_value=15, value=12)
 
         top_border = side_border = border_px
-        bottom_border = int(border_px * 6)  # doubled bottom space
+        bottom_border = int(border_px * 6)
 
         polaroid_width = final_image.width + 2 * side_border
         polaroid_height = final_image.height + top_border + bottom_border
 
         transparent_bg = Image.new("RGBA", (polaroid_width, polaroid_height), (255, 255, 255, 0))
 
-        # High-resolution mask for anti-aliasing
+        # Create rounded image with anti-aliased mask
+        rounded_image = final_image.convert("RGBA")
         scale_factor = 4
-        large_size = (rounded_image.size[0]*scale_factor, rounded_image.size[1]*scale_factor)
+        large_size = (rounded_image.width * scale_factor, rounded_image.height * scale_factor)
         large_mask = Image.new("L", large_size, 0)
         draw = ImageDraw.Draw(large_mask)
-        draw.rounded_rectangle([(0, 0), large_size], radius=corner_radius*scale_factor, fill=255)
-
-        # Downsample with anti-aliasing
+        draw.rounded_rectangle(
+            [(0, 0), large_size],
+            radius=corner_radius * scale_factor,
+            fill=255
+        )
         rounded_mask = large_mask.resize(rounded_image.size, Image.LANCZOS)
         rounded_image.putalpha(rounded_mask)
-
-        #rounded_image = final_image.convert("RGBA")
-        #rounded_mask = Image.new("L", rounded_image.size, 0)
-        #draw = ImageDraw.Draw(rounded_mask)
-        #draw.rounded_rectangle([(0, 0), rounded_image.size], radius=corner_radius, fill=255)
-        #rounded_image.putalpha(rounded_mask)
 
         transparent_bg.paste(rounded_image, (side_border, top_border), mask=rounded_mask)
 
