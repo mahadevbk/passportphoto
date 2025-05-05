@@ -147,11 +147,22 @@ if uploaded_file:
 
         transparent_bg = Image.new("RGBA", (polaroid_width, polaroid_height), (255, 255, 255, 0))
 
-        rounded_image = final_image.convert("RGBA")
-        rounded_mask = Image.new("L", rounded_image.size, 0)
-        draw = ImageDraw.Draw(rounded_mask)
-        draw.rounded_rectangle([(0, 0), rounded_image.size], radius=corner_radius, fill=255)
+        # High-resolution mask for anti-aliasing
+        scale_factor = 4
+        large_size = (rounded_image.size[0]*scale_factor, rounded_image.size[1]*scale_factor)
+        large_mask = Image.new("L", large_size, 0)
+        draw = ImageDraw.Draw(large_mask)
+        draw.rounded_rectangle([(0, 0), large_size], radius=corner_radius*scale_factor, fill=255)
+
+        # Downsample with anti-aliasing
+        rounded_mask = large_mask.resize(rounded_image.size, Image.LANCZOS)
         rounded_image.putalpha(rounded_mask)
+
+        #rounded_image = final_image.convert("RGBA")
+        #rounded_mask = Image.new("L", rounded_image.size, 0)
+        #draw = ImageDraw.Draw(rounded_mask)
+        #draw.rounded_rectangle([(0, 0), rounded_image.size], radius=corner_radius, fill=255)
+        #rounded_image.putalpha(rounded_mask)
 
         transparent_bg.paste(rounded_image, (side_border, top_border), mask=rounded_mask)
 
