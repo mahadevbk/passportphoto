@@ -1,5 +1,5 @@
 import streamlit as st
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from PIL import Image, ImageDraw, ImageFont
 import cv2
 import numpy as np
 import io
@@ -19,11 +19,9 @@ passport_sizes = {
     "Other": (35, 45)
 }
 
-# --- MM to pixels conversion ---
 def mm_to_pixels(mm, dpi=300):
     return int((mm / 25.4) * dpi)
 
-# --- Detect and crop around face ---
 def detect_and_crop_face(pil_image):
     cv_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
     gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
@@ -47,7 +45,6 @@ def detect_and_crop_face(pil_image):
     face_crop = pil_image.crop((left, top, right, bottom))
     return face_crop, True
 
-# --- Streamlit UI ---
 st.set_page_config(page_title="Passport Photo Generator", layout="centered")
 st.title("📸 Passport Photo Generator with Auto Face Centering")
 
@@ -82,7 +79,6 @@ if uploaded_file:
     if auto_center:
         st.info("🔍 Detecting and centering face...")
         cropped_image, found = detect_and_crop_face(original_image)
-
         if found:
             st.success("✅ Face detected and centered.")
         else:
@@ -94,7 +90,6 @@ if uploaded_file:
     scale = max(photo_width_px / img_width, photo_height_px / img_height)
     new_width = int(img_width * scale)
     new_height = int(img_height * scale)
-
     resized_image = cropped_image.resize((new_width, new_height), Image.LANCZOS)
 
     left = (new_width - photo_width_px) // 2
@@ -113,31 +108,23 @@ if uploaded_file:
     st.image(final_image, caption="Centered and Bordered", width=300)
 
     custom_filename = st.text_input("Enter the file name to download (without extension):", value="passport_photo")
-
     download_option = st.radio("Select Download Option", ["1 Photo", "6 Photos (3x2 grid)", "Polaroid Style"])
 
     if download_option == "6 Photos (3x2 grid)":
         grid_width = final_image.width * 3
         grid_height = final_image.height * 2
         grid_image = Image.new("RGB", (grid_width, grid_height), "white")
-
         for i in range(3):
             for j in range(2):
                 grid_image.paste(final_image, (i * final_image.width, j * final_image.height))
-
         img_buffer = io.BytesIO()
         grid_image.save(img_buffer, format="JPEG")
-        st.download_button(
-            label="🗕️ Download 6 Photos",
-            data=img_buffer.getvalue(),
-            file_name=f"{custom_filename}_6_photos.jpg",
-            mime="image/jpeg"
-        )
+        st.download_button("🗕️ Download 6 Photos", img_buffer.getvalue(), f"{custom_filename}_6_photos.jpg", "image/jpeg")
 
     elif download_option == "Polaroid Style":
         st.markdown("✏️ Optional: Add a caption below the photo.")
         caption_text = st.text_input("Caption (leave blank for no text):", "")
-        caption_font_mm = st.slider("Caption Font Size (mm)", min_value=2, max_value=15, value=12)
+        caption_font_mm = st.slider("Caption Font Size (mm)", 2, 15, 12)
 
         top_border = side_border = border_px
         bottom_border = int(border_px * 6)
@@ -152,11 +139,7 @@ if uploaded_file:
         large_size = (rounded_image.width * scale_factor, rounded_image.height * scale_factor)
         large_mask = Image.new("L", large_size, 0)
         draw = ImageDraw.Draw(large_mask)
-        draw.rounded_rectangle(
-            [(0, 0), large_size],
-            radius=corner_radius * scale_factor,
-            fill=255
-        )
+        draw.rounded_rectangle([(0, 0), large_size], radius=corner_radius * scale_factor, fill=255)
         rounded_mask = large_mask.resize(rounded_image.size, Image.LANCZOS)
         rounded_image.putalpha(rounded_mask)
 
@@ -165,10 +148,9 @@ if uploaded_file:
         if caption_text.strip():
             draw_text = ImageDraw.Draw(transparent_bg)
             try:
-                font = ImageFont.truetype("CoveredByYourGrace-Regular.ttf", size=mm_to_pixels(caption_font_mm, dpi))
+                font = ImageFont.truetype("CoveredByYourGrace-Regular.ttf", mm_to_pixels(caption_font_mm, dpi))
             except:
                 font = ImageFont.load_default()
-
             text_bbox = draw_text.textbbox((0, 0), caption_text, font=font)
             text_width = text_bbox[2] - text_bbox[0]
             text_height = text_bbox[3] - text_bbox[1]
@@ -176,42 +158,17 @@ if uploaded_file:
             text_y = final_image.height + top_border + ((bottom_border - text_height) // 2)
             draw_text.text((text_x, text_y), caption_text, fill="black", font=font)
 
-        shadow_offset = 10
-        shadow_mask = Image.new("L", (polaroid_width, polaroid_height), 0)
-        shadow_draw = ImageDraw.Draw(shadow_mask)
-        shadow_draw.rounded_rectangle(
-            [(0, 0), (polaroid_width, polaroid_height)],
-            radius=corner_radius,
-            fill=255
-        )
+        polaroid_img = Image.new("RGB", transparent_bg.size, "white")
+        polaroid_img.paste(transparent_bg.convert("RGB"), (0, 0))
 
-        shadow = Image.new("RGBA", (polaroid_width + shadow_offset, polaroid_height + shadow_offset), (0, 0, 0, 0))
-        shadow_layer = Image.new("RGBA", (polaroid_width, polaroid_height), (0, 0, 0, 150))
-        shadow.paste(shadow_layer, (shadow_offset, shadow_offset), mask=shadow_mask)
-        shadow = shadow.filter(ImageFilter.GaussianBlur(radius=8))
-        shadow.paste(transparent_bg, (0, 0), mask=transparent_bg)
-
-        polaroid_img = Image.new("RGB", shadow.size, "white")
-        polaroid_img.paste(shadow.convert("RGB"), (0, 0))
-
-        st.subheader("🖼️ Polaroid-Style Preview with Shadow")
+        st.subheader("🖼️ Polaroid-Style Preview")
         st.image(polaroid_img, caption="Polaroid Output", width=300)
 
         img_buffer = io.BytesIO()
         polaroid_img.save(img_buffer, format="JPEG")
-        st.download_button(
-            label="🗕️ Download Polaroid Image",
-            data=img_buffer.getvalue(),
-            file_name=f"{custom_filename}_polaroid.jpg",
-            mime="image/jpeg"
-        )
+        st.download_button("🗕️ Download Polaroid Image", img_buffer.getvalue(), f"{custom_filename}_polaroid.jpg", "image/jpeg")
 
     else:
         img_buffer = io.BytesIO()
         final_image.save(img_buffer, format="JPEG")
-        st.download_button(
-            label="🗕️ Click to Download",
-            data=img_buffer.getvalue(),
-            file_name=f"{custom_filename}.jpg",
-            mime="image/jpeg"
-        )
+        st.download_button("🗕️ Click to Download", img_buffer.getvalue(), f"{custom_filename}.jpg", "image/jpeg")
