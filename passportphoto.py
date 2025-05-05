@@ -49,12 +49,13 @@ def detect_and_crop_face(pil_image):
 
 # --- Streamlit UI ---
 st.set_page_config(page_title="Passport Photo Generator", layout="centered")
-st.title("📸 Passport Photo Generator with Auto Face Centering")
+st.title("📸 Passport Photo Generator with Optional Face Centering")
 
 st.sidebar.header("⚙️ Settings")
 dpi = st.sidebar.slider("DPI (dots per inch)", 200, 600, 300)
 border_mm = st.sidebar.slider("White Border (mm)", 0, 5, 2)
 corner_radius = st.sidebar.slider("Polaroid Corner Radius (px)", 0, 300, 20)
+auto_center = st.sidebar.radio("Auto Face Centering", ["Enabled", "Disabled"]) == "Enabled"
 
 uploaded_file = st.file_uploader("Upload your photo", type=["jpg", "jpeg", "png"])
 
@@ -77,13 +78,17 @@ if uploaded_file:
     photo_height_px = mm_to_pixels(height_mm, dpi)
     border_px = mm_to_pixels(border_mm, dpi)
 
-    st.info("🔍 Detecting and centering face...")
-    cropped_image, found = detect_and_crop_face(original_image)
-
-    if found:
-        st.success("✅ Face detected and centered.")
+    if auto_center:
+        st.info("🔍 Detecting and centering face...")
+        cropped_image, found = detect_and_crop_face(original_image)
+        if found:
+            st.success("✅ Face detected and centered.")
+        else:
+            st.warning("⚠️ Face not detected. Using original image.")
+            cropped_image = original_image
     else:
-        st.warning("⚠️ Face not detected. Using original image.")
+        st.info("📌 Auto centering disabled. Using original image.")
+        cropped_image = original_image
 
     img_width, img_height = cropped_image.size
     scale = max(photo_width_px / img_width, photo_height_px / img_height)
@@ -108,7 +113,6 @@ if uploaded_file:
     st.image(final_image, caption="Centered and Bordered", width=300)
 
     custom_filename = st.text_input("Enter the file name to download (without extension):", value="passport_photo")
-
     download_option = st.radio("Select Download Option", ["1 Photo", "6 Photos (3x2 grid)", "Polaroid Style"])
 
     if download_option == "6 Photos (3x2 grid)":
@@ -135,7 +139,7 @@ if uploaded_file:
         caption_font_mm = st.slider("Caption Font Size (mm)", min_value=2, max_value=15, value=12)
 
         top_border = side_border = border_px
-        bottom_border = int(border_px * 6)  # doubled bottom space
+        bottom_border = int(border_px * 6)  # Double bottom space
 
         polaroid_width = final_image.width + 2 * side_border
         polaroid_height = final_image.height + top_border + bottom_border
@@ -162,6 +166,7 @@ if uploaded_file:
             text_height = text_bbox[3] - text_bbox[1]
             text_x = (transparent_bg.width - text_width) // 2
             text_y = final_image.height + top_border + (bottom_border - text_height) // 2
+
             draw_text.text((text_x, text_y), caption_text, fill="black", font=font)
 
         polaroid_img = Image.new("RGB", (polaroid_width, polaroid_height), "white")
