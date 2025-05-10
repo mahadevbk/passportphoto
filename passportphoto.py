@@ -172,3 +172,5 @@ if uploaded_file:
         img_buffer = io.BytesIO()
         final_image.save(img_buffer, format="JPEG")
         st.download_button("🗕️ Click to Download", img_buffer.getvalue(), f"{custom_filename}.jpg", "image/jpeg")
+
+st.info("Built with ❤️ using [Streamlit](https://streamlit.io/) — free and open source. [Other Scripts by dev](https://devs-scripts.streamlit.app/) on Streamlit.")
